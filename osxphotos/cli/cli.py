@@ -48,6 +48,7 @@ if is_macos:
     from .add_locations import add_locations
     from .batch_edit import batch_edit
     from .cloud import cloud_cli
+    from . import cloud_s3  # registers S3 commands with cloud_cli
     from .import_cli import import_main
     from .photo_inspect import photo_inspect
     from .push_exif import push_exif
