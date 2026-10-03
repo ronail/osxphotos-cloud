@@ -228,6 +228,7 @@ Commands:
   add-locations     Add missing location data to photos in Photos.app using...
   albums            Print out albums found in the Photos library.
   batch-edit        Batch edit photo metadata such as title, description,...
+  cloud             Sync the Photos library to/from cloud storage using...
   compare           Compare two Photos libraries to find differences
   dbversion         Print version info for a Photos library
   docs              Open osxphotos documentation in your browser.
@@ -754,6 +755,51 @@ OSXPhotos adheres to the [XDG](https://specifications.freedesktop.org/basedir-sp
 * Current working dir: `osxphotos_crash.log` file containing the stack trace of the last crash if OSXPhotos encounters a fatal error during execution.
 * export directory (when running `osxphotos export` command): `.osxphotos_export.db` [SQLite](https://www.sqlite.org/index.html) database containing information needed to update an export and track metadata changes in exported photos. *Note*: This file may contain sensitive information such as locations and the names of persons in photos so if you are using `osxphotos export` to share with others, you may want to delete this file. You can also specify an alternate location for the export database using the `--exportdb` flag during export.  See also `osxphotos help exportdb` for more information about built in utilities for working with the export database.
 * While osxphotos does not create the file, if present in the root of the export directory, osxphotos will read the file `.osxphotos_keep` to load a list of file/directory patterns which should be excluded from `--cleanup` during export. This file uses the same rule format as [.gitignore](https://git-scm.com/docs/gitignore). See `osxphotos help export cleanup` for more information.
+
+## Cloud Sync
+
+`osxphotos` can mirror your Photos library to and from any cloud storage
+service supported by [rclone](https://rclone.org) (S3, Backblaze B2, Cloudflare
+R2, Google Cloud Storage, SFTP, and many others) using the `osxphotos cloud`
+command.  Install `rclone` and configure at least one remote first:
+
+    brew install rclone
+    rclone config
+
+### Push: Photos library to cloud
+
+    osxphotos cloud push myremote:photos
+
+`push` exports each photo into a human-readable `YYYY/MM/DD/filename.ext`
+directory tree in a local staging directory (default
+`~/Pictures/CloudSyncStaging`), then runs `rclone sync` to copy only new or
+changed files to the remote.  The export is incremental (tracked in osxphotos'
+export database, which travels with the sync) and `rclone sync` transfers only
+deltas, so repeat runs are fast and move no unchanged data.
+
+### Pull: cloud to Photos library
+
+    osxphotos cloud pull myremote:photos
+
+`pull` runs `rclone sync` to download the remote into a local directory
+(default `~/Pictures/DownloadedPhotos`) and then imports the files into Photos.
+Photos that already exist in the library are skipped (`--skip-dups`, the
+default), using the export database synced alongside the photos when present.
+
+Both commands accept `--dry-run` to preview without transferring or importing,
+`--no-progress` to silence progress bars, `-V/--verbose` for verbose output, and
+`--rclone-arg ARG` (repeatable) to pass extra arguments through to `rclone`.
+`push` accepts `--db` and `pull` accepts `--library` to select a specific Photos
+library instead of the last opened one.  See `osxphotos help cloud` and
+`osxphotos help cloud push` for the full list of options.
+
+### Installation via Homebrew tap
+
+This fork ships a Homebrew tap that installs the command line tool as
+`osxphotos-cloud`:
+
+    brew tap ronail/osxphotos-cloud https://github.com/ronail/osxphotos-cloud
+    brew install osxphotos-cloud
 
 ## Python API
 
